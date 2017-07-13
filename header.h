@@ -29,6 +29,7 @@ void sh_insert_last(bck_process **head, int pid, char *buff, int status);
 void sh_delete_node(bck_process **head, int pid);
 void signal_handler_child(int signum, siginfo_t *ptr, void *context);
 void signal_handler_stop(int signum);
+void signal_handler_int(int signum);
 void cd_fun(char *buff);
 //void signal_handler(int signum);
 #endif

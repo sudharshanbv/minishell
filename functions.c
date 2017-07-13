@@ -1,11 +1,16 @@
+/*header file inclusion*/
 #include "header.h"
 
+/*global variable declaration*/
 extern bck_process *head;
 extern int pid_run;
 int flag_stp = 0;
 extern int bg_flag;
-
+int kill_flag = 0;
+extern int ret;
+extern char prompt[100];
 /*--------------------------------------------------------------------------------------------------------------------------*/
+/*change directory function block*/
 void cd_fun(char *buff)
 {
 	char *ptr;
@@ -19,33 +24,63 @@ void cd_fun(char *buff)
 
 }
 /*--------------------------------------------------------------------------------------------------------------------------*/
+/*signal handler for SIGINIT*/
+void signal_handler_int(int signum)
+{
+
+	if (pid_run == 0)
+	{
+
+		printf("\n\n");
+		printf("%s : ", prompt);
+		fflush(stdout);
+		return;
+	}
+
+	else
+	{
+		kill_flag = 1;
+		kill(pid_run, SIGKILL);
+		pid_run = 0;
+	}
+}
+
+/*--------------------------------------------------------------------------------------------------------------------------*/
+/*signal handler for SIGTSTP*/
 void signal_handler_stop(int signum)
 {
 	flag_stp = 1;
+	ret = 1;
 }
 /*--------------------------------------------------------------------------------------------------------------------------*/
 /*signal handler function block*/
 void signal_handler_child(int signum, siginfo_t *ptr, void *context)
 {
-	if (!bg_flag)
+	if (kill_flag == 0)
 	{
-		if (!flag_stp)
+		if (!bg_flag)
 		{
-			sh_delete_node(&head, ptr->si_pid);
+			if (!flag_stp)
+			{
+				sh_delete_node(&head, ptr->si_pid);
+			}
+
+			else
+			{
+				if (flag_stp)
+				{
+					kill(ptr->si_pid, SIGSTOP);
+					pid_run = 0;
+				}
+
+			}
+
 		}
 
-		else
-		{
-			if (flag_stp)
-{
-				kill(ptr->si_pid, SIGSTOP);
-flag_stp = 0;
-}
-
-		}
-
+		bg_flag = 0;
 	}
-	bg_flag = 0;
+
+	kill_flag = 0;
 }
 /*--------------------------------------------------------------------------------------------------------------------------*/
 /*create node function block*/
@@ -161,7 +196,10 @@ void sh_delete_node(bck_process **head, int pid)
 
 		else if (ptr == *head && ptr->pid == pid && ptr->next == NULL)
 		{
+		free(ptr);
+ptr = NULL;
 			*head = NULL;
+
 		}
 		/*if val found in first node*/
 		else if (ptr == *head && ptr->pid == pid)
@@ -182,7 +220,7 @@ void sh_delete_node(bck_process **head, int pid)
 		{
 			ptr->prev->next = NULL;
 		}
-
+if (ptr != NULL)
 		free(ptr);
 	}
 }
@@ -281,12 +319,7 @@ int prase_split(char *buff, char ***argu, int *var)
 	if (flag_space == 0)
 		(*argu)[jdx][kdx] = '\0';
 
-	//printf("\n%s\n", (*argu)[jdx]);
-//	*argu = realloc(*argu, (jdx + 1) * sizeof (char *));
 	(*argu) [jdx + 1] = '\0';
-	//	(*argu)[jdx] = NULL;
-
-	//printf("\n%s\n", (*argu)[jdx]);
 	return pipe_count;
 }
 

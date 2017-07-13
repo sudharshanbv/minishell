@@ -7,6 +7,8 @@
 bck_process *head = NULL;
 int bg_flag = 0;
 int pid_run = 0;
+int ret;
+char buff[1024], prompt[100] = "Sudharshan";
 
 /*main function block*/
 int main(int argc, char *argv, char *envp)
@@ -15,7 +17,7 @@ int main(int argc, char *argv, char *envp)
 
 	/*local variable declaration*/
 	int status = 0, flag = 0, count = 0, pipe_count, break_flag = 1, bck_flag = 0, wait_flag = WSTOPPED, save;
-	int idx = 0, var[50], jdx = 1, ret, pid = 0, kdx = 0, id, exit_flag = 0, ldx = 0;;
+	int idx = 0, var[50], jdx = 1, pid = 0, kdx = 0, id, exit_flag = 0, ldx = 0;;
 	extern int flag_stp;
 	bck_process *d_ptr;
 	char  **argu = NULL, *ptr = NULL;
@@ -35,6 +37,7 @@ int main(int argc, char *argv, char *envp)
 
 	sigaction(SIGCHLD, &act, NULL);
 	signal(SIGTSTP, signal_handler_stop);
+	signal(SIGINT, signal_handler_int);
 
 	while (1)
 	{
@@ -171,6 +174,7 @@ int main(int argc, char *argv, char *envp)
 				{
 					d_ptr->status = 1;
 					kill(d_ptr->pid, SIGCONT);
+//return;
 				}
 			}
 
@@ -188,31 +192,29 @@ int main(int argc, char *argv, char *envp)
 			else
 			{
 				bg_flag = 1;
-				//	wait_flag = WCONTINUED;
 
 				while (d_ptr->next != NULL)
 					d_ptr = d_ptr->next;
 
-			//	while (d_ptr->status != 2)
-			//		d_ptr = d_ptr->prev;
 
 				if (d_ptr->status == 2)
 				{
 					d_ptr->status = 1;
 					kill(d_ptr->pid, SIGCONT);
-                                }
-else if (d_ptr->status == 1)
-{
-sh_delete_node(&head, d_ptr->pid);
-}    
-
-					while (ret == 0)
-					{
-						ret = waitpid(d_ptr->pid, &status, WNOHANG);
-					}	
 				}
-			continue;
+				else if (d_ptr->status == 1)
+				{
+					sh_delete_node(&head, d_ptr->pid);
+				}    
+
+				while (ret == 0)
+				{
+					ret = waitpid(d_ptr->pid, &status, WNOHANG);
+
+				}	
 			}
+			continue;
+		}
 
 		/*calling the parse function to count the number of pipes*/
 		pipe_count = prase_split(buff, &argu, var);
